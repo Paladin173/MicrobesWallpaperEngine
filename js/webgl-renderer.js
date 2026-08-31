@@ -5,6 +5,7 @@ class MicrobesWebGLRenderer {
     this.canvas = canvas;
     this.scene = scene;
     this.quality = quality;
+    this.zoom = 1;
     this.resources = [];
     this.contextLost = false;
     this.visibleLayers = new Set(['decoration', 'corpse', 'food', 'microbe']);
@@ -109,7 +110,8 @@ class MicrobesWebGLRenderer {
       strideFloats,
       count: data.length / strideFloats,
       viewportLocation: gl.getUniformLocation(program, 'uViewport'),
-      timeLocation: gl.getUniformLocation(program, 'uTime')
+      timeLocation: gl.getUniformLocation(program, 'uTime'),
+      zoomLocation: gl.getUniformLocation(program, 'uZoom')
     };
   }
 
@@ -133,6 +135,7 @@ class MicrobesWebGLRenderer {
     gl.useProgram(layer.program);
     gl.uniform2f(layer.viewportLocation, this.canvas.width, this.canvas.height);
     if (layer.timeLocation) gl.uniform1f(layer.timeLocation, timeSeconds);
+    if (layer.zoomLocation) gl.uniform1f(layer.zoomLocation, this.zoom);
     gl.bindVertexArray(layer.vao);
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, layer.count);
   }
@@ -153,6 +156,17 @@ class MicrobesWebGLRenderer {
   setQuality(quality) {
     this.quality = quality;
     this.resize();
+  }
+
+  setZoom(zoom) {
+    this.zoom = Math.max(0.5, Math.min(2, Number(zoom) || 1));
+  }
+
+  screenToWorld(x, y) {
+    return {
+      x: Math.max(0, Math.min(1, ((x * 2 - 1) / this.zoom + 1) / 2)),
+      y: Math.max(0, Math.min(1, (1 - (1 - y * 2) / this.zoom) / 2))
+    };
   }
 
   setVisibleLayers(names) {
@@ -177,6 +191,7 @@ class MicrobesWebGLRenderer {
       renderer: gl.getParameter(gl.RENDERER),
       version: gl.getParameter(gl.VERSION),
       contextLost: this.contextLost,
+      zoom: this.zoom,
       drawingBufferWidth: gl.drawingBufferWidth,
       drawingBufferHeight: gl.drawingBufferHeight,
       glError: gl.getError(),
@@ -251,7 +266,7 @@ class MicrobesWebGLRenderer {
     const size = layer === 'decoration'
       ? '200.0 * mix(0.5, 1.0, aTransform.z)'
       : layer === 'food'
-        ? '20.0 * (cos(uTime * 2.0 + aTransform.z * 10.0) * 0.2 + 0.7)'
+        ? '10.0 * (cos(uTime * 2.0 + aTransform.z * 10.0) * 0.2 + 0.7)'
         : 'aTransform.w';
     const scale = layer === 'decoration'
       ? 'min(uViewport.y / 800.0, 1.3)'
@@ -269,6 +284,7 @@ class MicrobesWebGLRenderer {
       ${layerInputs}
       uniform vec2 uViewport;
       uniform float uTime;
+      uniform float uZoom;
       out vec2 vLocal;
       void main() {
         float size = ${size} * ${scale};
@@ -277,7 +293,7 @@ class MicrobesWebGLRenderer {
         float sine = sin(aTransform.z);
         mat2 rotation = mat2(cosine, sine, -sine, cosine);
         vec2 pixelOffset = rotation * aVertex * size;
-        gl_Position = vec4(center + pixelOffset * 2.0 / uViewport, 0.0, 1.0);
+        gl_Position = vec4((center + pixelOffset * 2.0 / uViewport) * uZoom, 0.0, 1.0);
         vLocal = aVertex;
         ${layerOutputs}
       }`;

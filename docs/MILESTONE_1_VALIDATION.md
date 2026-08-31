@@ -77,7 +77,9 @@ The interactive ecosystem was implemented after the milestone-1 revision recorde
 above. The browser suite now verifies fixed-step movement, dynamic GPU buffer
 streaming without WebGL errors, click-to-feed behavior, death and corpse creation,
 simulation pause semantics, and WebGL context restoration without replacing live
-world state. The complete suite passes nine tests.
+world state. It also verifies heading alignment in screen space, zoom scaling and
+inverse pointer mapping, reduced food-particle size, and animated preview metadata.
+The complete suite passes 14 tests.
 
 The current repository was also opened by Wallpaper Engine in an isolated
 `MicrobesValidation` pop-out using its documented `openWallpaper` command. Two

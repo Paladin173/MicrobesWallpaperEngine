@@ -460,7 +460,7 @@ class MicrobeWorld {
       );
       this.corpses[offset] = corpse.x * 2 - 1;
       this.corpses[offset + 1] = 1 - corpse.y * 2;
-      this.corpses[offset + 2] = corpse.angle;
+      this.corpses[offset + 2] = -corpse.angle;
       this.corpses[offset + 3] = corpse.size * (0.72 - sinkProgress * 0.22);
       rendered++;
     }
@@ -492,7 +492,7 @@ class MicrobeWorld {
         : 0;
       this.microbes[offset] = microbe.x * 2 - 1;
       this.microbes[offset + 1] = 1 - microbe.y * 2;
-      this.microbes[offset + 2] = microbe.angle;
+      this.microbes[offset + 2] = -microbe.angle;
       this.microbes[offset + 3] = 30 * microbe.typeScale * MicrobeWorld.growthScale(microbe);
       this.microbes[offset + 4] = Math.min(1, microbe.red * 1.1 + pulse);
       this.microbes[offset + 5] = Math.min(1, microbe.green * 1.1 + pulse);

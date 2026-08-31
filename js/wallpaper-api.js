@@ -17,6 +17,9 @@ window.wallpaperPropertyListener = {
       window.wallpaperSettings.renderQuality = properties.renderquality.value;
       window.app?.applyRenderQuality(properties.renderquality.value);
     }
+    if (properties.zoom !== undefined) {
+      window.app?.applyZoom(properties.zoom.value);
+    }
     if (properties.interaction !== undefined) {
       window.wallpaperSettings.interaction = properties.interaction.value;
       window.app?.applyInteraction(properties.interaction.value);

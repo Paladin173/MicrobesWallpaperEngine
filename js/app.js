@@ -55,6 +55,10 @@ class WallpaperApp {
     this.renderer.setQuality(quality);
   }
 
+  applyZoom(zoom) {
+    this.renderer.setZoom(zoom);
+  }
+
   applyInteraction(enabled) {
     this.interaction = Boolean(enabled);
   }
@@ -88,11 +92,14 @@ class WallpaperApp {
     const record = event => {
       if (!this.interaction) return;
       const rect = this.canvas.getBoundingClientRect();
+      const screenX = Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width)));
+      const screenY = Math.max(0, Math.min(1, (event.clientY - rect.top) / Math.max(1, rect.height)));
+      const worldPosition = this.renderer.screenToWorld(screenX, screenY);
       this.lastPointer = {
         type: event.type,
         id: event.pointerId,
-        x: Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width))),
-        y: Math.max(0, Math.min(1, (event.clientY - rect.top) / Math.max(1, rect.height)))
+        x: worldPosition.x,
+        y: worldPosition.y
       };
       if (event.type === 'click') {
         this.scene.feed(this.lastPointer.x, this.lastPointer.y);

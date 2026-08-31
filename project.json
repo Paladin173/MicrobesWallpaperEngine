@@ -3,6 +3,7 @@
   "description": "An interactive live wallpaper featuring animated microbes that move around your desktop.",
   "author": "Paladin173",
   "file": "index.html",
+  "preview": "preview.gif",
   "version": 2,
   "type": "web",
   "general": {
@@ -17,6 +18,14 @@
           { "label": "Balanced", "value": "balanced" },
           { "label": "Performance", "value": "performance" }
         ]
+      },
+      "zoom": {
+        "text": "Zoom",
+        "type": "slider",
+        "value": 1,
+        "min": 0.5,
+        "max": 2,
+        "step": 0.05
       },
       "interaction": {
         "text": "Interaction",

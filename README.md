@@ -46,6 +46,6 @@ directly into Wallpaper Engine.
 
 ## Customization
 
-Project properties control render quality, interaction, movement speed, lifecycle
-speed, ambient food, population density, and background decorations. The wallpaper
-also respects Wallpaper Engine's general FPS limit and pause events.
+Project properties control render quality, zoom, interaction, movement speed,
+lifecycle speed, ambient food, population density, and background decorations. The
+wallpaper also respects Wallpaper Engine's general FPS limit and pause events.

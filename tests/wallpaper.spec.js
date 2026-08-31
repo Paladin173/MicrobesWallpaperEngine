@@ -35,6 +35,7 @@ test('uses Wallpaper Engine native project property schema', async ({ request })
   expect(response.ok()).toBe(true);
   const project = await response.json();
   expect(project.file).toBe('index.html');
+  expect(project.preview).toBe('preview.gif');
   expect(project.type).toBe('web');
   expect(Array.isArray(project.general.properties)).toBe(false);
   expect(project.general.properties.renderquality).toMatchObject({
@@ -49,6 +50,12 @@ test('uses Wallpaper Engine native project property schema', async ({ request })
     value: true
   });
   expect(project.general.properties.movementspeed.type).toBe('slider');
+  expect(project.general.properties.zoom).toMatchObject({
+    type: 'slider',
+    value: 1,
+    min: 0.5,
+    max: 2
+  });
   expect(project.general.properties.population.options).toHaveLength(3);
 });
 
@@ -89,6 +96,43 @@ test('renders every active ecosystem layer without WebGL errors', async ({ page 
   expect(state.blendSource).toBe(state.sourceAlpha);
   expect(state.blendDestination).toBe(state.one);
   expect(pageErrors).toEqual([]);
+});
+
+test('renders food at the reduced particle size', async ({ page }) => {
+  await openWallpaper(page, 800, 600);
+  const bounds = await page.evaluate(() => {
+    const renderer = window.app.renderer;
+    const world = window.app.scene;
+    renderer.setVisibleLayers(['food']);
+    world.foodCount = 1;
+    world.food.set([0, 0, 0, 1], 0);
+    renderer.draw(1);
+    const gl = renderer.gl;
+    const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+    gl.readPixels(
+      0,
+      0,
+      gl.drawingBufferWidth,
+      gl.drawingBufferHeight,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      pixels
+    );
+    let minimumX = gl.drawingBufferWidth;
+    let maximumX = -1;
+    for (let y = 0; y < gl.drawingBufferHeight; y++) {
+      for (let x = 0; x < gl.drawingBufferWidth; x++) {
+        const offset = (y * gl.drawingBufferWidth + x) * 4;
+        if (pixels[offset] <= 8 && pixels[offset + 1] <= 8 && pixels[offset + 2] <= 8) continue;
+        minimumX = Math.min(minimumX, x);
+        maximumX = Math.max(maximumX, x);
+      }
+    }
+    return { width: maximumX - minimumX + 1, glError: gl.getError() };
+  });
+  expect(bounds.width).toBeGreaterThan(2);
+  expect(bounds.width).toBeLessThanOrEqual(10);
+  expect(bounds.glError).toBe(0);
 });
 
 test('advances microbe positions with fixed simulation steps', async ({ page }) => {
@@ -283,4 +327,64 @@ test('restores WebGL resources without replacing scene state', async ({ page }) 
   expect(result.marker).toBe('preserved');
   expect(result.diagnostics.glError).toBe(0);
   expect(result.diagnostics.layerCounts.microbe).toBe(30);
+});
+
+test('points microbes in their rendered direction of travel', async ({ page }) => {
+  await openWallpaper(page);
+  const alignment = await page.evaluate(() => {
+    const world = window.app.scene;
+    const microbe = world.microbeSlots[0];
+    microbe.velocityX = 0.03;
+    microbe.velocityY = 0.04;
+    microbe.angle = Math.atan2(microbe.velocityY, microbe.velocityX);
+    world.writeMicrobes();
+    const renderAngle = world.microbes[2];
+    const speed = Math.hypot(microbe.velocityX, microbe.velocityY);
+    return Math.cos(renderAngle) * microbe.velocityX / speed
+      + Math.sin(renderAngle) * -microbe.velocityY / speed;
+  });
+  expect(alignment).toBeCloseTo(1, 5);
+});
+
+test('applies zoom and preserves world-space pointer mapping', async ({ page }) => {
+  await openWallpaper(page, 800, 600);
+  await page.evaluate(() => window.wallpaperPropertyListener.applyUserProperties({
+    zoom: { value: 2 }
+  }));
+  await page.mouse.move(600, 150);
+  const diagnostics = await page.evaluate(() => window.app.getDiagnostics());
+  expect(diagnostics.zoom).toBe(2);
+  expect(diagnostics.lastPointer.x).toBeCloseTo(0.625, 3);
+  expect(diagnostics.lastPointer.y).toBeCloseTo(0.375, 3);
+  expect(diagnostics.glError).toBe(0);
+
+  const pixelCounts = await page.evaluate(() => {
+    const renderer = window.app.renderer;
+    const world = window.app.scene;
+    renderer.setVisibleLayers(['microbe']);
+    world.microbeCount = 1;
+    world.microbes.set([0, 0, 0, 80, 1, 0.2, 0.1, 0.7], 0);
+    const countPixels = zoom => {
+      renderer.setZoom(zoom);
+      renderer.draw(1);
+      const gl = renderer.gl;
+      const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+      gl.readPixels(
+        0,
+        0,
+        gl.drawingBufferWidth,
+        gl.drawingBufferHeight,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixels
+      );
+      let count = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index] > 8 || pixels[index + 1] > 8 || pixels[index + 2] > 8) count++;
+      }
+      return count;
+    };
+    return { zoomedOut: countPixels(0.5), zoomedIn: countPixels(2) };
+  });
+  expect(pixelCounts.zoomedIn).toBeGreaterThan(pixelCounts.zoomedOut * 8);
 });
