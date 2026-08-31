@@ -388,3 +388,52 @@ test('applies zoom and preserves world-space pointer mapping', async ({ page }) 
   });
   expect(pixelCounts.zoomedIn).toBeGreaterThan(pixelCounts.zoomedOut * 8);
 });
+
+test('expands simulation and click bounds to every zoomed-out screen edge', async ({ page }) => {
+  await openWallpaper(page, 5120, 1440);
+  await page.evaluate(() => window.wallpaperPropertyListener.applyUserProperties({
+    zoom: { value: 0.5 }
+  }));
+  const edgeResults = [];
+  for (const [screenX, screenY, worldX, worldY] of [
+    [1, 1, -0.5, -0.5],
+    [5119, 1, 1.5, -0.5],
+    [1, 1439, -0.5, 1.5],
+    [5119, 1439, 1.5, 1.5]
+  ]) {
+    await page.mouse.click(screenX, screenY);
+    edgeResults.push(await page.evaluate(() => ({
+      pointer: window.app.lastPointer,
+      food: Array.from(window.app.scene.foodX)
+        .filter(value => value !== MicrobeWorld.INVALID)
+    })));
+    expect(edgeResults.at(-1).pointer.x).toBeCloseTo(worldX, 2);
+    expect(edgeResults.at(-1).pointer.y).toBeCloseTo(worldY, 2);
+    expect(edgeResults.at(-1).food.some(value => Math.abs(value - worldX) < 0.06)).toBe(true);
+  }
+  const bounds = await page.evaluate(() => ({
+    minimumX: window.app.scene.minimumX,
+    maximumX: window.app.scene.maximumX,
+    minimumY: window.app.scene.minimumY,
+    maximumY: window.app.scene.maximumY,
+    glError: window.app.renderer.gl.getError()
+  }));
+  expect(bounds).toMatchObject({ minimumX: -0.5, maximumX: 1.5, minimumY: -0.5, maximumY: 1.5 });
+  expect(bounds.glError).toBe(0);
+
+  const corpseState = await page.evaluate(() => {
+    const world = window.app.scene;
+    const corpse = world.corpseSlots[0];
+    corpse.active = true;
+    corpse.x = 0.5;
+    corpse.y = 1.2;
+    corpse.startY = 1;
+    corpse.angle = 0;
+    corpse.size = 20;
+    world.activeCorpseCount = 1;
+    world.updateCorpses(1 / 60);
+    return { active: corpse.active, y: corpse.y };
+  });
+  expect(corpseState.active).toBe(true);
+  expect(corpseState.y).toBeGreaterThan(1.2);
+});

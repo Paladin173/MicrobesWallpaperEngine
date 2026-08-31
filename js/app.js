@@ -57,6 +57,7 @@ class WallpaperApp {
 
   applyZoom(zoom) {
     this.renderer.setZoom(zoom);
+    this.scene.setZoom(this.renderer.zoom);
   }
 
   applyInteraction(enabled) {

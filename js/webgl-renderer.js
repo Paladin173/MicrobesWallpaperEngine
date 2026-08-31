@@ -163,9 +163,11 @@ class MicrobesWebGLRenderer {
   }
 
   screenToWorld(x, y) {
+    const minimum = (1 - 1 / this.zoom) / 2;
+    const maximum = (1 + 1 / this.zoom) / 2;
     return {
-      x: Math.max(0, Math.min(1, ((x * 2 - 1) / this.zoom + 1) / 2)),
-      y: Math.max(0, Math.min(1, (1 - (1 - y * 2) / this.zoom) / 2))
+      x: Math.max(minimum, Math.min(maximum, ((x * 2 - 1) / this.zoom + 1) / 2)),
+      y: Math.max(minimum, Math.min(maximum, (1 - (1 - y * 2) / this.zoom) / 2))
     };
   }
 

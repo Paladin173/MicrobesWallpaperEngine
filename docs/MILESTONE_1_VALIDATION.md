@@ -79,7 +79,9 @@ streaming without WebGL errors, click-to-feed behavior, death and corpse creatio
 simulation pause semantics, and WebGL context restoration without replacing live
 world state. It also verifies heading alignment in screen space, zoom scaling and
 inverse pointer mapping, reduced food-particle size, and animated preview metadata.
-The complete suite passes 14 tests.
+Zoomed-out simulation, food placement, pointer attraction, and corpse lifecycle now
+share the full projected world bounds, including all four edges of a 5120x1440
+viewport. The complete suite passes 15 tests.
 
 The current repository was also opened by Wallpaper Engine in an isolated
 `MicrobesValidation` pop-out using its documented `openWallpaper` command. Two

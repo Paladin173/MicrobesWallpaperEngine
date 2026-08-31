@@ -45,6 +45,10 @@ class MicrobeWorld {
     this.movementScale = 0.6;
     this.lifecycleScale = 1;
     this.minimumPopulation = MicrobeWorld.INITIAL_COUNT;
+    this.minimumX = 0;
+    this.maximumX = 1;
+    this.minimumY = 0;
+    this.maximumY = 1;
     this.elapsedSeconds = 0;
     this.foodRespawnTimer = 0;
     this.activeCount = 0;
@@ -138,6 +142,57 @@ class MicrobeWorld {
     this.minimumPopulation = mode === 'low' ? 20 : mode === 'high' ? 45 : 30;
   }
 
+  setZoom(zoom) {
+    const extent = 1 / MicrobeWorld.clamp(Number(zoom) || 1, 0.5, 2);
+    const minimum = (1 - extent) / 2;
+    const maximum = (1 + extent) / 2;
+    if (minimum === this.minimumX && maximum === this.maximumX) return;
+    const mapX = value => MicrobeWorld.remap(
+      value,
+      this.minimumX,
+      this.maximumX,
+      minimum,
+      maximum
+    );
+    const mapY = value => MicrobeWorld.remap(
+      value,
+      this.minimumY,
+      this.maximumY,
+      minimum,
+      maximum
+    );
+    for (const microbe of this.microbeSlots) {
+      if (!microbe.active) continue;
+      microbe.x = mapX(microbe.x);
+      microbe.y = mapY(microbe.y);
+    }
+    for (const corpse of this.corpseSlots) {
+      if (!corpse.active) continue;
+      corpse.x = mapX(corpse.x);
+      corpse.y = mapY(corpse.y);
+      corpse.startY = mapY(corpse.startY);
+    }
+    for (let index = 0; index < MicrobeWorld.FOOD_CAPACITY; index++) {
+      if (this.foodX[index] === MicrobeWorld.INVALID) continue;
+      this.foodX[index] = mapX(this.foodX[index]);
+      this.foodY[index] = mapY(this.foodY[index]);
+    }
+    for (let index = 0; index < MicrobeWorld.MOTION_CAPACITY; index++) {
+      if (this.motionExpiry[index] <= this.elapsedSeconds) continue;
+      this.motionX[index] = mapX(this.motionX[index]);
+      this.motionY[index] = mapY(this.motionY[index]);
+    }
+    for (let index = 0; index < MicrobeWorld.DECORATION_CAPACITY; index++) {
+      this.decorationX[index] = mapX(this.decorationX[index]);
+      this.decorationY[index] = mapY(this.decorationY[index]);
+    }
+    this.minimumX = minimum;
+    this.maximumX = maximum;
+    this.minimumY = minimum;
+    this.maximumY = maximum;
+    this.writeRenderData();
+  }
+
   motion(x, y) {
     let slot = 0;
     for (let index = 0; index < MicrobeWorld.MOTION_CAPACITY; index++) {
@@ -146,8 +201,8 @@ class MicrobeWorld {
         break;
       }
     }
-    this.motionX[slot] = MicrobeWorld.clamp(x, 0, 1);
-    this.motionY[slot] = MicrobeWorld.clamp(y, 0, 1);
+    this.motionX[slot] = MicrobeWorld.clamp(x, this.minimumX, this.maximumX);
+    this.motionY[slot] = MicrobeWorld.clamp(y, this.minimumY, this.maximumY);
     this.motionExpiry[slot] = this.elapsedSeconds + 0.5;
   }
 
@@ -156,8 +211,8 @@ class MicrobeWorld {
       const foodX = x + (this.random.nextFloat() * 2 - 1) * 0.044;
       const foodY = y + (this.random.nextFloat() * 2 - 1) * 0.044;
       if (!this.placeFood(
-        MicrobeWorld.clamp(foodX, 0, 1),
-        MicrobeWorld.clamp(foodY, 0, 1)
+        MicrobeWorld.clamp(foodX, this.minimumX, this.maximumX),
+        MicrobeWorld.clamp(foodY, this.minimumY, this.maximumY)
       )) break;
     }
     this.motion(x, y);
@@ -182,8 +237,8 @@ class MicrobeWorld {
   updateWandering() {
     for (const microbe of this.microbeSlots) {
       if (!microbe.active) continue;
-      let boundaryX = MicrobeWorld.boundaryForce(microbe.x);
-      const boundaryY = MicrobeWorld.boundaryForce(microbe.y);
+      let boundaryX = MicrobeWorld.boundaryForce(microbe.x, this.minimumX, this.maximumX);
+      const boundaryY = MicrobeWorld.boundaryForce(microbe.y, this.minimumY, this.maximumY);
       const turn = Math.cos(this.elapsedSeconds * 0.3 + microbe.phase * 30) * 0.01
         + Math.cos(this.elapsedSeconds + microbe.phase * 30) * 0.03;
       microbe.angle += turn;
@@ -272,8 +327,16 @@ class MicrobeWorld {
         microbe.velocityY *= maximumSpeed / speed;
         speed = maximumSpeed;
       }
-      microbe.x = MicrobeWorld.clamp(microbe.x + microbe.velocityX * delta, 0, 1);
-      microbe.y = MicrobeWorld.clamp(microbe.y + microbe.velocityY * delta, 0, 1);
+      microbe.x = MicrobeWorld.clamp(
+        microbe.x + microbe.velocityX * delta,
+        this.minimumX,
+        this.maximumX
+      );
+      microbe.y = MicrobeWorld.clamp(
+        microbe.y + microbe.velocityY * delta,
+        this.minimumY,
+        this.maximumY
+      );
       if (speed > 0.0001) microbe.angle = Math.atan2(microbe.velocityY, microbe.velocityX);
       microbe.energy -= 0.0125 * lifeDelta;
       if (microbe.energy > 0.75) {
@@ -292,28 +355,30 @@ class MicrobeWorld {
         + Math.sin(phase + noise * 0.01);
       this.foodX[index] = MicrobeWorld.clamp(
         this.foodX[index] + Math.cos(direction) * delta * 0.004,
-        0,
-        1
+        this.minimumX,
+        this.maximumX
       );
       this.foodY[index] = MicrobeWorld.clamp(
         this.foodY[index] + Math.sin(direction) * delta * 0.004,
-        0,
-        1
+        this.minimumY,
+        this.maximumY
       );
     }
     this.foodRespawnTimer += delta * this.lifecycleScale;
     if (!this.ambientFoodEnabled) return;
     while (this.foodRespawnTimer >= 0.2) {
       this.foodRespawnTimer -= 0.2;
-      if (!this.placeFood(this.random.nextFloat(), this.random.nextFloat())) break;
+      if (!this.placeFood(this.randomX(), this.randomY())) break;
     }
   }
 
   updateCorpses(delta) {
+    const worldHeight = this.maximumY - this.minimumY;
+    const removalY = this.maximumY + worldHeight * 0.15;
     for (const corpse of this.corpseSlots) {
       if (!corpse.active) continue;
-      corpse.y += 10 / 800 * delta;
-      if (corpse.y > 1.15) {
+      corpse.y += worldHeight * 10 / 800 * delta;
+      if (corpse.y > removalY) {
         corpse.active = false;
         this.activeCorpseCount--;
       }
@@ -337,7 +402,7 @@ class MicrobeWorld {
     while (this.activeCount < this.minimumPopulation) {
       const replacement = this.findInactiveMicrobe();
       if (!replacement) break;
-      this.activateMicrobeSlot(replacement, this.random.nextFloat(), this.random.nextFloat());
+      this.activateMicrobeSlot(replacement, this.randomX(), this.randomY());
     }
   }
 
@@ -363,8 +428,8 @@ class MicrobeWorld {
     const offsetX = Math.cos(parent.angle) * 0.003;
     const offsetY = Math.sin(parent.angle) * 0.003;
     child.active = true;
-    child.x = MicrobeWorld.clamp(parent.x - offsetX, 0, 1);
-    child.y = MicrobeWorld.clamp(parent.y - offsetY, 0, 1);
+    child.x = MicrobeWorld.clamp(parent.x - offsetX, this.minimumX, this.maximumX);
+    child.y = MicrobeWorld.clamp(parent.y - offsetY, this.minimumY, this.maximumY);
     child.angle = parent.angle + Math.PI;
     child.phase = this.random.nextFloat();
     child.energy = this.birthEnergy();
@@ -374,8 +439,8 @@ class MicrobeWorld {
     child.red = parent.red;
     child.green = parent.green;
     child.blue = parent.blue;
-    parent.x = MicrobeWorld.clamp(parent.x + offsetX, 0, 1);
-    parent.y = MicrobeWorld.clamp(parent.y + offsetY, 0, 1);
+    parent.x = MicrobeWorld.clamp(parent.x + offsetX, this.minimumX, this.maximumX);
+    parent.y = MicrobeWorld.clamp(parent.y + offsetY, this.minimumY, this.maximumY);
     parent.breed = 0.7;
     this.activeCount++;
     this.reproductionCount++;
@@ -430,6 +495,14 @@ class MicrobeWorld {
     return 0.5 + this.random.nextFloat() * 0.2;
   }
 
+  randomX() {
+    return this.minimumX + this.random.nextFloat() * (this.maximumX - this.minimumX);
+  }
+
+  randomY() {
+    return this.minimumY + this.random.nextFloat() * (this.maximumY - this.minimumY);
+  }
+
   writeRenderData() {
     this.writeDecorations();
     this.writeCorpses();
@@ -450,11 +523,12 @@ class MicrobeWorld {
 
   writeCorpses() {
     let rendered = 0;
+    const removalY = this.maximumY + (this.maximumY - this.minimumY) * 0.15;
     for (const corpse of this.corpseSlots) {
       if (!corpse.active) continue;
       const offset = rendered * 4;
       const sinkProgress = MicrobeWorld.clamp(
-        (corpse.y - corpse.startY) / Math.max(0.001, 1.15 - corpse.startY),
+        (corpse.y - corpse.startY) / Math.max(0.001, removalY - corpse.startY),
         0,
         1
       );
@@ -519,10 +593,16 @@ class MicrobeWorld {
     return 0.55 + progress * 0.75;
   }
 
-  static boundaryForce(position) {
-    if (position < 0.1) return (0.1 - position) * 0.1;
-    if (position > 0.9) return (0.9 - position) * 0.1;
+  static boundaryForce(position, minimum = 0, maximum = 1) {
+    const margin = (maximum - minimum) * 0.1;
+    if (position < minimum + margin) return (minimum + margin - position) * 0.1;
+    if (position > maximum - margin) return (maximum - margin - position) * 0.1;
     return 0;
+  }
+
+  static remap(value, oldMinimum, oldMaximum, newMinimum, newMaximum) {
+    const ratio = (value - oldMinimum) / Math.max(0.000001, oldMaximum - oldMinimum);
+    return newMinimum + ratio * (newMaximum - newMinimum);
   }
 
   static clamp(value, minimum, maximum) {
