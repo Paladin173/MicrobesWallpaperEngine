@@ -113,11 +113,17 @@ test('advances microbe positions with fixed simulation steps', async ({ page }) 
 
 test('feeds microbes and advances death into the corpse lifecycle', async ({ page }) => {
   await openWallpaper(page, 800, 600);
-  await page.evaluate(() => window.app.setPaused(true));
-  const beforeFood = await page.evaluate(() => window.app.scene.activeFoodCount);
-  await page.mouse.click(400, 300);
-  const afterFeed = await page.evaluate(() => window.app.scene.activeFoodCount);
-  expect(afterFeed).toBe(beforeFood + 5);
+  const foodCounts = await page.evaluate(() => {
+    window.app.setPaused(true);
+    const before = window.app.scene.activeFoodCount;
+    document.getElementById('canvas').dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      clientX: 400,
+      clientY: 300
+    }));
+    return { before, after: window.app.scene.activeFoodCount };
+  });
+  expect(foodCounts.after).toBe(foodCounts.before + 5);
 
   const lifecycle = await page.evaluate(() => {
     const world = window.app.scene;

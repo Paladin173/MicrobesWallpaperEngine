@@ -94,14 +94,14 @@ class WallpaperApp {
         x: Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width))),
         y: Math.max(0, Math.min(1, (event.clientY - rect.top) / Math.max(1, rect.height)))
       };
-      if (event.type === 'pointerdown') {
+      if (event.type === 'click') {
         this.scene.feed(this.lastPointer.x, this.lastPointer.y);
       } else if (event.type === 'pointermove') {
         this.scene.motion(this.lastPointer.x, this.lastPointer.y);
       }
       this.pointerEvents++;
     };
-    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) {
+    for (const type of ['click', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel']) {
       this.canvas.addEventListener(type, record);
     }
   }
