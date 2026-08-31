@@ -25,14 +25,33 @@ and its branching lifecycle behavior is easier to test in JavaScript.
 No runtime network access or external CDN dependencies should be required. Bundle
 all code and assets in the wallpaper project.
 
-## Current scaffold status
+## External browser reference
 
-The repository is **pre-milestone-1**. Its current Canvas 2D code is a disposable
-proof of concept: it renders independently bouncing green circles in pixel space,
-has no food, lifecycle, fog, corpses, or pointer interaction, and caches its frame
-interval before Wallpaper Engine can change the FPS setting. Loading without errors
-is not evidence of behavioral parity. Replace this path rather than incrementally
-adding the ecosystem to it.
+`https://microbes.roilipman.com/` is useful as an interaction and motion reference,
+but not as a code source. As inspected on 2026-08-31, it ships an approximately
+879 KB monolithic, older Three.js bundle with no application source link, source
+map, or explicit application license on the page. Do not copy its implementation.
+
+Its independently reusable design ideas are noise-driven wandering, a brief speed
+boost after interaction, health-based maturation, and a short feeding-brightness
+pulse. The Android reference already provides the authoritative lifecycle and pulse
+behavior. Evaluate a subtle seeded-noise contribution only after parity, and only
+if it improves natural motion without changing deterministic ecosystem outcomes.
+
+Do not adopt the external project's per-entity Three.js vectors, meshes, textures,
+timeouts, or tweens. They add allocation, draw-call, dependency, and lifecycle cost
+that conflicts with continuous dual-ultrawide operation. Keep the typed-array CPU
+simulation and four instanced GPU batches described below.
+
+## Current implementation status
+
+As of 2026-08-31, the original Canvas prototype has been replaced by the WebGL 2
+vertical slice and is ready for live Wallpaper Engine validation. Fixture
+buffers were exported directly from `MicrobeWorld` seed 123: decoration, food, and
+microbe data are from the initial state at a 1280x720 viewport with render sizes
+normalized to an 800-pixel height; corpse data is from the same seed after a
+60-second, 2x-lifecycle starvation run. Browser gates are automated, but Android
+screenshot comparison and target-PC GPU measurements remain pending live evidence.
 
 ## Source behavior to preserve
 

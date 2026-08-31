@@ -1,31 +1,28 @@
 // Wallpaper Engine API bridge
 window.wallpaperSettings = {
   fps: 30,
-  speed: 1.0,
-  density: 100,
-  color: '#00ff00'
+  renderQuality: 'auto',
+  interaction: true
 };
 
 window.wallpaperPropertyListener = {
   applyGeneralProperties(properties) {
     if (properties.fps !== undefined) {
       window.wallpaperSettings.fps = properties.fps;
+      window.app?.applyFpsLimit(properties.fps);
     }
   },
   applyUserProperties(properties) {
-    if (properties.speed !== undefined) {
-      window.wallpaperSettings.speed = properties.speed.value;
+    if (properties.renderquality !== undefined) {
+      window.wallpaperSettings.renderQuality = properties.renderquality.value;
+      window.app?.applyRenderQuality(properties.renderquality.value);
     }
-    if (properties.density !== undefined) {
-      window.wallpaperSettings.density = properties.density.value;
-    }
-    if (properties.color !== undefined) {
-      window.wallpaperSettings.color = properties.color.value;
+    if (properties.interaction !== undefined) {
+      window.wallpaperSettings.interaction = properties.interaction.value;
+      window.app?.applyInteraction(properties.interaction.value);
     }
   },
   setPaused(paused) {
-    if (window.app) {
-      window.app.paused = paused;
-    }
+    window.app?.setPaused(paused);
   }
 };
