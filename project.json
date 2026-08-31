@@ -1,0 +1,33 @@
+{
+  "title": "Microbes Live Wallpaper",
+  "description": "An interactive live wallpaper featuring animated microbes that move around your desktop.",
+  "author": "Paladin173",
+  "version": "0.1.0",
+  "type": "web",
+  "properties": [
+    {
+      "key": "speed",
+      "label": "Speed",
+      "type": "slider",
+      "minimum": 0.1,
+      "maximum": 2.0,
+      "value": 1.0,
+      "precision": 2
+    },
+    {
+      "key": "density",
+      "label": "Microbe Density",
+      "type": "slider",
+      "minimum": 10,
+      "maximum": 500,
+      "value": 100,
+      "precision": 0
+    },
+    {
+      "key": "color",
+      "label": "Microbe Color",
+      "type": "color",
+      "value": "#00ff00"
+    }
+  ]
+}
