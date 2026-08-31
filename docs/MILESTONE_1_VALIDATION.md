@@ -81,7 +81,9 @@ world state. It also verifies heading alignment in screen space, zoom scaling an
 inverse pointer mapping, reduced food-particle size, and animated preview metadata.
 Zoomed-out simulation, food placement, pointer attraction, and corpse lifecycle now
 share the full projected world bounds, including all four edges of a 5120x1440
-viewport. The complete suite passes 15 tests.
+viewport. Wallpaper Engine settings are retained when delivered before app startup,
+with the global property listener registered in the document head and wrapped or raw
+property values normalized before use. The complete suite passes 16 tests.
 
 The current repository was also opened by Wallpaper Engine in an isolated
 `MicrobesValidation` pop-out using its documented `openWallpaper` command. Two

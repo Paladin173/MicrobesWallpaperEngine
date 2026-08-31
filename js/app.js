@@ -17,6 +17,7 @@ class WallpaperApp {
       this.scene,
       window.wallpaperSettings.renderQuality
     );
+    this.applyInitialSettings();
 
     this.resizeObserver = new ResizeObserver(() => this.renderer.resize());
     this.resizeObserver.observe(this.canvas);
@@ -64,21 +65,28 @@ class WallpaperApp {
     this.interaction = Boolean(enabled);
   }
 
+  applyInitialSettings() {
+    this.applyRenderQuality(window.wallpaperSettings.renderQuality);
+    this.applyZoom(window.wallpaperSettings.zoom);
+    this.applyInteraction(window.wallpaperSettings.interaction);
+    this.applyEcosystemSettings(window.wallpaperSettings);
+  }
+
   applyEcosystemSettings(settings) {
-    if (settings.movementspeed !== undefined) {
-      this.scene.setMovementScale(settings.movementspeed.value);
+    if (settings.movementSpeed !== undefined) {
+      this.scene.setMovementScale(settings.movementSpeed);
     }
-    if (settings.lifecyclespeed !== undefined) {
-      this.scene.setLifecycleScale(settings.lifecyclespeed.value);
+    if (settings.lifecycleSpeed !== undefined) {
+      this.scene.setLifecycleScale(settings.lifecycleSpeed);
     }
-    if (settings.ambientfood !== undefined) {
-      this.scene.setAmbientFoodEnabled(settings.ambientfood.value);
+    if (settings.ambientFood !== undefined) {
+      this.scene.setAmbientFoodEnabled(settings.ambientFood);
     }
     if (settings.population !== undefined) {
-      this.scene.setPopulationDensity(settings.population.value);
+      this.scene.setPopulationDensity(settings.population);
     }
     if (settings.decorations !== undefined) {
-      this.scene.setDecorationsEnabled(settings.decorations.value);
+      this.scene.setDecorationsEnabled(settings.decorations);
     }
   }
 

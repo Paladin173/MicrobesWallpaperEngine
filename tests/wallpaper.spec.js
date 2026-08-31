@@ -31,6 +31,11 @@ async function countLayerPixels(page, layer) {
 }
 
 test('uses Wallpaper Engine native project property schema', async ({ request }) => {
+    const indexResponse = await request.get('/index.html');
+    const index = await indexResponse.text();
+    expect(index.indexOf('js/wallpaper-api.js')).toBeLessThan(index.indexOf('</head>'));
+    expect(index.indexOf('js/wallpaper-api.js')).toBeLessThan(index.indexOf('js/app.js'));
+
   const response = await request.get('/project.json');
   expect(response.ok()).toBe(true);
   const project = await response.json();
@@ -436,4 +441,54 @@ test('expands simulation and click bounds to every zoomed-out screen edge', asyn
   });
   expect(corpseState.active).toBe(true);
   expect(corpseState.y).toBeGreaterThan(1.2);
+});
+test('retains settings delivered before the wallpaper app is ready', async ({ page }) => {
+    await openWallpaper(page);
+    const result = await page.evaluate(() => {
+        const app = window.app;
+        window.app = undefined;
+        window.wallpaperPropertyListener.applyUserProperties({
+            renderquality: { value: 'performance' },
+            zoom: { value: 0.5 },
+            interaction: { value: 'false' },
+            movementspeed: { value: 1.25 },
+            lifecyclespeed: { value: 1.8 },
+            ambientfood: { value: 0 },
+            population: { value: 'high' },
+            decorations: { value: false }
+        });
+        window.app = app;
+        app.applyInitialSettings();
+        return {
+            settings: window.wallpaperSettings,
+            quality: app.renderer.quality,
+            zoom: app.renderer.zoom,
+            interaction: app.interaction,
+            movementScale: app.scene.movementScale,
+            lifecycleScale: app.scene.lifecycleScale,
+            ambientFoodEnabled: app.scene.ambientFoodEnabled,
+            minimumPopulation: app.scene.minimumPopulation,
+            decorationCount: app.scene.decorationCount
+        };
+    });
+    expect(result).toMatchObject({
+        quality: 'performance',
+        zoom: 0.5,
+        interaction: false,
+        movementScale: 1.25,
+        lifecycleScale: 1.8,
+        ambientFoodEnabled: false,
+        minimumPopulation: 45,
+        decorationCount: 0
+    });
+    expect(result.settings).toMatchObject({
+        renderQuality: 'performance',
+        zoom: 0.5,
+        interaction: false,
+        movementSpeed: 1.25,
+        lifecycleSpeed: 1.8,
+        ambientFood: false,
+        population: 'high',
+        decorations: false
+    });
 });
