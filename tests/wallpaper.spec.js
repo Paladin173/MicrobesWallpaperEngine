@@ -164,15 +164,23 @@ test('feeds microbes and advances death into the corpse lifecycle', async ({ pag
   await openWallpaper(page, 800, 600);
   const foodCounts = await page.evaluate(() => {
     window.app.setPaused(true);
-    const before = window.app.scene.activeFoodCount;
+        const world = window.app.scene;
+        const before = world.activeFoodCount;
+        const occupiedBefore = Array.from(world.foodX, x => x !== MicrobeWorld.INVALID);
     document.getElementById('canvas').dispatchEvent(new MouseEvent('click', {
       bubbles: true,
       clientX: 400,
       clientY: 300
     }));
-    return { before, after: window.app.scene.activeFoodCount };
+        const distances = [];
+        for (let index = 0; index < world.foodX.length; index++) {
+            if (occupiedBefore[index] || world.foodX[index] === MicrobeWorld.INVALID) continue;
+            distances.push(Math.hypot(world.foodX[index] - 0.5, world.foodY[index] - 0.5));
+        }
+        return { before, after: world.activeFoodCount, maximumDistance: Math.max(...distances) };
   });
   expect(foodCounts.after).toBe(foodCounts.before + 5);
+    expect(foodCounts.maximumDistance).toBeLessThanOrEqual(0.0121);
 
   const lifecycle = await page.evaluate(() => {
     const world = window.app.scene;
@@ -189,6 +197,22 @@ test('feeds microbes and advances death into the corpse lifecycle', async ({ pag
   expect(lifecycle.diagnostics.corpseCount).toBe(1);
   expect(lifecycle.diagnostics.activeCount).toBe(29);
   expect(lifecycle.glError).toBe(0);
+
+    const decomposition = await page.evaluate(() => {
+        const world = window.app.scene;
+        world.setAmbientFoodEnabled(false);
+        const beforeFood = world.activeFoodCount;
+        world.corpseSlots.find(corpse => corpse.active).age = 3.99;
+        world.updateCorpses(0.02);
+        world.writeRenderData();
+        return {
+            beforeFood,
+            afterFood: world.activeFoodCount,
+            corpses: world.activeCorpseCount
+        };
+    });
+    expect(decomposition.afterFood).toBe(decomposition.beforeFood + 6);
+    expect(decomposition.corpses).toBe(0);
 });
 
 test('reproduces mature microbes and attracts them to pointer motion', async ({ page }) => {
@@ -442,6 +466,7 @@ test('expands simulation and click bounds to every zoomed-out screen edge', asyn
   expect(corpseState.active).toBe(true);
   expect(corpseState.y).toBeGreaterThan(1.2);
 });
+
 test('retains settings delivered before the wallpaper app is ready', async ({ page }) => {
     await openWallpaper(page);
     const result = await page.evaluate(() => {

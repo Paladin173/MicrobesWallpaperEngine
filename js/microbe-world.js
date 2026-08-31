@@ -81,7 +81,8 @@ class MicrobeWorld {
       y: 0,
       startY: 0,
       angle: 0,
-      size: 0
+            size: 0,
+            age: 0
     }));
     this.foodX = new Float32Array(MicrobeWorld.FOOD_CAPACITY);
     this.foodY = new Float32Array(MicrobeWorld.FOOD_CAPACITY);
@@ -208,8 +209,10 @@ class MicrobeWorld {
 
   feed(x, y) {
     for (let index = 0; index < 5; index++) {
-      const foodX = x + (this.random.nextFloat() * 2 - 1) * 0.044;
-      const foodY = y + (this.random.nextFloat() * 2 - 1) * 0.044;
+            const angle = this.random.nextFloat() * Math.PI * 2;
+            const distance = Math.sqrt(this.random.nextFloat()) * 0.012;
+            const foodX = x + Math.cos(angle) * distance;
+            const foodY = y + Math.sin(angle) * distance;
       if (!this.placeFood(
         MicrobeWorld.clamp(foodX, this.minimumX, this.maximumX),
         MicrobeWorld.clamp(foodY, this.minimumY, this.maximumY)
@@ -377,13 +380,26 @@ class MicrobeWorld {
     const removalY = this.maximumY + worldHeight * 0.15;
     for (const corpse of this.corpseSlots) {
       if (!corpse.active) continue;
+            corpse.age += delta;
       corpse.y += worldHeight * 10 / 800 * delta;
-      if (corpse.y > removalY) {
+            if (corpse.age >= 4 || corpse.y > removalY) {
+                this.releaseCorpseFood(corpse);
         corpse.active = false;
         this.activeCorpseCount--;
       }
     }
   }
+
+    releaseCorpseFood(corpse) {
+        for (let index = 0; index < 6; index++) {
+            const angle = this.random.nextFloat() * Math.PI * 2;
+            const distance = Math.sqrt(this.random.nextFloat()) * 0.018;
+            if (!this.placeFood(
+                MicrobeWorld.clamp(corpse.x + Math.cos(angle) * distance, this.minimumX, this.maximumX),
+                MicrobeWorld.clamp(corpse.y + Math.sin(angle) * distance, this.minimumY, this.maximumY)
+            )) break;
+        }
+    }
 
   updateLifecycle() {
     for (const microbe of this.microbeSlots) {
@@ -422,6 +438,7 @@ class MicrobeWorld {
     corpse.startY = microbe.y;
     corpse.angle = microbe.angle;
     corpse.size = 30 * microbe.typeScale * MicrobeWorld.growthScale(microbe);
+        corpse.age = 0;
   }
 
   reproduce(parent, child) {
