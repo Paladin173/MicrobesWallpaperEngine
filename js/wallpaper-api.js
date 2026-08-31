@@ -21,6 +21,16 @@ window.wallpaperPropertyListener = {
       window.wallpaperSettings.interaction = properties.interaction.value;
       window.app?.applyInteraction(properties.interaction.value);
     }
+    const ecosystemProperties = [
+      'movementspeed',
+      'lifecyclespeed',
+      'ambientfood',
+      'population',
+      'decorations'
+    ];
+    if (ecosystemProperties.some(name => properties[name] !== undefined)) {
+      window.app?.applyEcosystemSettings(properties);
+    }
   },
   setPaused(paused) {
     window.app?.setPaused(paused);

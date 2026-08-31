@@ -5,15 +5,15 @@ for Wallpaper Engine and ultrawide desktop displays.
 
 ## Current status
 
-Milestone 1 is ready for Wallpaper Engine validation: a deterministic WebGL 2 vertical slice renders the
-fog, corpse, food, and four-color microbe layers with the original procedural
-shader formulas. It supports Wallpaper Engine FPS changes, pause/resume, render
-quality scaling, normalized pointer input, resize, and WebGL context restoration.
+The wallpaper runs an interactive, fixed-timestep ecosystem rendered with WebGL 2.
+Microbes wander, avoid neighbors, seek and consume drifting food, grow, reproduce,
+starve, and leave sinking corpses. Clicking adds food, while dragging attracts
+nearby microbes. The simulation supports Wallpaper Engine FPS changes, pause/resume,
+render quality scaling, resize, and WebGL context restoration.
 
-The ecosystem simulation and final click-to-feed behavior are planned next. The
-current entities are fixed Android-reference fixtures used to validate rendering
-and performance. Final visual parity and target-PC performance remain live test
-gates. The first live Wallpaper Engine measurements are recorded in
+The original procedural shader formulas and Android-exported fixtures remain in the
+repository for visual parity checks. Final Android side-by-side acceptance remains
+a live test gate. The first live Wallpaper Engine performance measurements are in
 [docs/MILESTONE_1_VALIDATION.md](docs/MILESTONE_1_VALIDATION.md).
 See [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) for the complete roadmap and gates.
 
@@ -46,7 +46,6 @@ directly into Wallpaper Engine.
 
 ## Customization
 
-The current project properties expose Auto, High, Balanced, and Performance render
-quality modes plus an interaction toggle. Additional ecosystem properties arrive
-with milestone 2. The wallpaper also respects Wallpaper Engine's general FPS limit
-and pause events.
+Project properties control render quality, interaction, movement speed, lifecycle
+speed, ambient food, population density, and background decorations. The wallpaper
+also respects Wallpaper Engine's general FPS limit and pause events.

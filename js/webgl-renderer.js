@@ -104,6 +104,9 @@ class MicrobesWebGLRenderer {
     return {
       program,
       vao,
+      instanceBuffer,
+      data,
+      strideFloats,
       count: data.length / strideFloats,
       viewportLocation: gl.getUniformLocation(program, 'uViewport'),
       timeLocation: gl.getUniformLocation(program, 'uTime')
@@ -115,12 +118,16 @@ class MicrobesWebGLRenderer {
     const gl = this.gl;
     gl.clear(gl.COLOR_BUFFER_BIT);
     for (const name of ['decoration', 'corpse', 'food', 'microbe']) {
-      if (this.visibleLayers.has(name)) this.drawLayer(this.layers[name], timeSeconds);
+      const layer = this.layers[name];
+      layer.count = this.scene[`${name}Count`] ?? layer.data.length / layer.strideFloats;
+      if (this.visibleLayers.has(name)) this.drawLayer(layer, timeSeconds);
     }
   }
 
   drawLayer(layer, timeSeconds) {
     const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, layer.instanceBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, layer.data, 0, layer.count * layer.strideFloats);
     gl.useProgram(layer.program);
     gl.uniform2f(layer.viewportLocation, this.canvas.width, this.canvas.height);
     if (layer.timeLocation) gl.uniform1f(layer.timeLocation, timeSeconds);

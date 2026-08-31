@@ -6,11 +6,12 @@ class WallpaperApp {
     this.fps = window.wallpaperSettings.fps;
     this.lastTime = performance.now() / 1000;
     this.fpsAccumulator = 0;
+    this.simulationAccumulator = 0;
     this.elapsedSeconds = 0;
     this.frameCount = 0;
     this.pointerEvents = 0;
     this.lastPointer = null;
-    this.scene = new MicrobeFixtureScene();
+    this.scene = new MicrobeWorld();
     this.renderer = new MicrobesWebGLRenderer(
       this.canvas,
       this.scene,
@@ -30,6 +31,11 @@ class WallpaperApp {
     this.lastTime = now;
     if (this.paused || this.renderer.contextLost) return;
     this.elapsedSeconds += delta;
+    this.simulationAccumulator = Math.min(this.simulationAccumulator + delta, 0.1);
+    while (this.simulationAccumulator >= 1 / 60) {
+      this.scene.update(1 / 60);
+      this.simulationAccumulator -= 1 / 60;
+    }
     if (this.fps > 0) {
       this.fpsAccumulator += delta;
       const threshold = 1 / this.fps;
@@ -53,10 +59,29 @@ class WallpaperApp {
     this.interaction = Boolean(enabled);
   }
 
+  applyEcosystemSettings(settings) {
+    if (settings.movementspeed !== undefined) {
+      this.scene.setMovementScale(settings.movementspeed.value);
+    }
+    if (settings.lifecyclespeed !== undefined) {
+      this.scene.setLifecycleScale(settings.lifecyclespeed.value);
+    }
+    if (settings.ambientfood !== undefined) {
+      this.scene.setAmbientFoodEnabled(settings.ambientfood.value);
+    }
+    if (settings.population !== undefined) {
+      this.scene.setPopulationDensity(settings.population.value);
+    }
+    if (settings.decorations !== undefined) {
+      this.scene.setDecorationsEnabled(settings.decorations.value);
+    }
+  }
+
   setPaused(paused) {
     this.paused = Boolean(paused);
     this.lastTime = performance.now() / 1000;
     this.fpsAccumulator = 0;
+    this.simulationAccumulator = 0;
   }
 
   installPointerDiagnostics() {
@@ -69,6 +94,11 @@ class WallpaperApp {
         x: Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width))),
         y: Math.max(0, Math.min(1, (event.clientY - rect.top) / Math.max(1, rect.height)))
       };
+      if (event.type === 'pointerdown') {
+        this.scene.feed(this.lastPointer.x, this.lastPointer.y);
+      } else if (event.type === 'pointermove') {
+        this.scene.motion(this.lastPointer.x, this.lastPointer.y);
+      }
       this.pointerEvents++;
     };
     for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) {
@@ -83,7 +113,8 @@ class WallpaperApp {
       fpsLimit: this.fps,
       frameCount: this.frameCount,
       pointerEvents: this.pointerEvents,
-      lastPointer: this.lastPointer
+      lastPointer: this.lastPointer,
+      ecosystem: this.scene.getDiagnostics()
     };
   }
 }

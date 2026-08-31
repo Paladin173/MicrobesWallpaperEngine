@@ -70,3 +70,31 @@ center, the Auto pixel budget, and WebGL context restoration without scene reset
 
 These limitations do not block starting milestone 2. They must be rechecked against
 the real interactive ecosystem before release acceptance.
+
+## Milestone 2 automated evidence
+
+The interactive ecosystem was implemented after the milestone-1 revision recorded
+above. The browser suite now verifies fixed-step movement, dynamic GPU buffer
+streaming without WebGL errors, click-to-feed behavior, death and corpse creation,
+simulation pause semantics, and WebGL context restoration without replacing live
+world state. The complete suite passes nine tests.
+
+The current repository was also opened by Wallpaper Engine in an isolated
+`MicrobesValidation` pop-out using its documented `openWallpaper` command. Two
+1294x758 visible-window captures taken at different times changed 2,633 of 58,320
+sampled content pixels (4.515%, mean RGB difference 5.269). Visual inspection showed
+the same organisms in different positions and lifecycle states, confirming movement
+in the owning runtime rather than only in browser automation.
+
+The isolated Wallpaper Engine process tree measured 0.159% average GPU-engine use,
+0.164% peak GPU-engine use, and 321.2 MB working set over five samples. Its Chromium
+log contained no application, JavaScript, or WebGL errors. The only entries were an
+access-denied Chromium usage-statistics registry write and an unrelated USB device
+enumeration warning. The named pop-out was closed after validation without replacing
+the existing desktop wallpaper assignment.
+
+Live pointer interaction was not exercised because desktop automation was unavailable
+in this session; browser automation covers click feeding, pointer attraction, and
+interaction disablement. The earlier 4096x1152 and 8192x1152 measurements remain the
+authoritative ultrawide evidence because the milestone-2 pop-out was partially clipped
+to the visible desktop capture area.

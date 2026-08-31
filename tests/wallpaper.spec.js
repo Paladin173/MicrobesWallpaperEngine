@@ -48,16 +48,17 @@ test('uses Wallpaper Engine native project property schema', async ({ request })
     type: 'bool',
     value: true
   });
+  expect(project.general.properties.movementspeed.type).toBe('slider');
+  expect(project.general.properties.population.options).toHaveLength(3);
 });
 
-test('renders every fixture layer without WebGL errors', async ({ page }) => {
+test('renders every active ecosystem layer without WebGL errors', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await openWallpaper(page);
 
   const minimumPixels = {
     decoration: 1000,
-    corpse: 20,
     food: 20,
     microbe: 100
   };
@@ -80,14 +81,80 @@ test('renders every fixture layer without WebGL errors', async ({ page }) => {
   expect(diagnostics.glError).toBe(0);
   expect(diagnostics.layerCounts).toEqual({
     decoration: 60,
-    corpse: 31,
-    food: 50,
+    corpse: 0,
+    food: diagnostics.ecosystem.foodCount,
     microbe: 30
   });
   expect(state.blendEnabled).toBe(true);
   expect(state.blendSource).toBe(state.sourceAlpha);
   expect(state.blendDestination).toBe(state.one);
   expect(pageErrors).toEqual([]);
+});
+
+test('advances microbe positions with fixed simulation steps', async ({ page }) => {
+  await openWallpaper(page);
+  const result = await page.evaluate(() => {
+    const beforeX = window.app.scene.microbes[0];
+    const beforeY = window.app.scene.microbes[1];
+    for (let step = 0; step < 60; step++) window.app.scene.update(1 / 60);
+    window.app.renderer.draw(1);
+    return {
+      beforeX,
+      beforeY,
+      afterX: window.app.scene.microbes[0],
+      afterY: window.app.scene.microbes[1],
+      glError: window.app.renderer.gl.getError()
+    };
+  });
+  expect(Math.hypot(result.afterX - result.beforeX, result.afterY - result.beforeY))
+    .toBeGreaterThan(0.02);
+  expect(result.glError).toBe(0);
+});
+
+test('feeds microbes and advances death into the corpse lifecycle', async ({ page }) => {
+  await openWallpaper(page, 800, 600);
+  await page.evaluate(() => window.app.setPaused(true));
+  const beforeFood = await page.evaluate(() => window.app.scene.activeFoodCount);
+  await page.mouse.click(400, 300);
+  const afterFeed = await page.evaluate(() => window.app.scene.activeFoodCount);
+  expect(afterFeed).toBe(beforeFood + 5);
+
+  const lifecycle = await page.evaluate(() => {
+    const world = window.app.scene;
+    world.minimumPopulation = 0;
+    world.microbeSlots[0].energy = -1;
+    world.update(1 / 60);
+    window.app.renderer.draw(1);
+    return {
+      diagnostics: world.getDiagnostics(),
+      glError: window.app.renderer.gl.getError()
+    };
+  });
+  expect(lifecycle.diagnostics.deathCount).toBe(1);
+  expect(lifecycle.diagnostics.corpseCount).toBe(1);
+  expect(lifecycle.diagnostics.activeCount).toBe(29);
+  expect(lifecycle.glError).toBe(0);
+});
+
+test('reproduces mature microbes and attracts them to pointer motion', async ({ page }) => {
+  await openWallpaper(page, 800, 600);
+  await page.evaluate(() => window.app.setPaused(true));
+  await page.mouse.move(600, 150);
+  const result = await page.evaluate(() => {
+    const world = window.app.scene;
+    const parent = world.microbeSlots[0];
+    parent.energy = 1;
+    parent.breed = 1.2;
+    world.update(1 / 60);
+    return {
+      diagnostics: world.getDiagnostics(),
+      activeMotionCount: Array.from(world.motionExpiry)
+        .filter(expiry => expiry > world.elapsedSeconds).length
+    };
+  });
+  expect(result.diagnostics.reproductionCount).toBe(1);
+  expect(result.diagnostics.activeCount).toBe(31);
+  expect(result.activeMotionCount).toBeGreaterThan(0);
 });
 
 test('applies live FPS limits and stops drawing while paused', async ({ page }) => {
@@ -103,8 +170,10 @@ test('applies live FPS limits and stops drawing while paused', async ({ page }) 
 
   await page.evaluate(() => window.wallpaperPropertyListener.setPaused(true));
   const paused = await page.evaluate(() => window.app.frameCount);
+  const pausedWorldTime = await page.evaluate(() => window.app.scene.elapsedSeconds);
   await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.app.frameCount)).toBe(paused);
+  expect(await page.evaluate(() => window.app.scene.elapsedSeconds)).toBe(pausedWorldTime);
 
   await page.evaluate(() => window.wallpaperPropertyListener.setPaused(false));
   await page.waitForTimeout(250);
