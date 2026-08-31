@@ -119,7 +119,9 @@ class MicrobesWebGLRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
     for (const name of ['decoration', 'corpse', 'food', 'microbe']) {
       const layer = this.layers[name];
-      layer.count = this.scene[`${name}Count`] ?? layer.data.length / layer.strideFloats;
+      const capacity = Math.floor(layer.data.length / layer.strideFloats);
+      const requestedCount = this.scene[`${name}Count`] ?? capacity;
+      layer.count = Math.max(0, Math.min(capacity, requestedCount));
       if (this.visibleLayers.has(name)) this.drawLayer(layer, timeSeconds);
     }
   }

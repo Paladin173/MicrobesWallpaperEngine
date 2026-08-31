@@ -157,6 +157,27 @@ test('reproduces mature microbes and attracts them to pointer motion', async ({ 
   expect(result.activeMotionCount).toBeGreaterThan(0);
 });
 
+test('bounds saturated lifecycle and renderer counts to allocated capacity', async ({ page }) => {
+  await openWallpaper(page);
+  const result = await page.evaluate(() => {
+    const world = window.app.scene;
+    const source = world.microbeSlots[0];
+    for (let index = 0; index < 100; index++) world.createCorpse(source);
+    world.writeCorpses();
+    world.corpseCount = 1000;
+    window.app.renderer.draw(1);
+    return {
+      activeCorpses: world.activeCorpseCount,
+      renderedCorpses: window.app.renderer.layers.corpse.count,
+      corpseCapacity: world.corpseSlots.length,
+      glError: window.app.renderer.gl.getError()
+    };
+  });
+  expect(result.activeCorpses).toBe(result.corpseCapacity);
+  expect(result.renderedCorpses).toBe(result.corpseCapacity);
+  expect(result.glError).toBe(0);
+});
+
 test('applies live FPS limits and stops drawing while paused', async ({ page }) => {
   await openWallpaper(page);
   await page.evaluate(() => window.wallpaperPropertyListener.applyGeneralProperties({ fps: 10 }));
