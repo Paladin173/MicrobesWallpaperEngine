@@ -25,6 +25,35 @@ and its branching lifecycle behavior is easier to test in JavaScript.
 No runtime network access or external CDN dependencies should be required. Bundle
 all code and assets in the wallpaper project.
 
+## Host decision and portability
+
+Continue with Wallpaper Engine for the first complete ecosystem. Live testing on
+the target PC rendered an 8192x1152 WebGL stress surface at approximately 0.3% GPU
+and below 1% process CPU, so a native Windows host would currently add complexity
+without addressing a measured problem. Wallpaper Engine also already owns startup,
+desktop placement, monitor profiles, fullscreen pausing, and user settings.
+
+Keep the simulation, renderer, input adapter, and Wallpaper Engine property bridge
+as separate modules. If the completed ecosystem exposes a host limitation, the same
+HTML/WebGL application can be hosted in a small WebView2 Windows application before
+considering a renderer rewrite. A personal Windows host would be acceptable even if
+it relies on Windows-specific desktop-window integration, but that integration must
+be treated as a separately tested lifecycle component.
+
+Switch hosts only if one of these gates fails in the real interactive build:
+
+- Wallpaper Engine does not reliably deliver pointer, pause/resume, or property
+  events to the assigned desktop wallpaper.
+- Its actual grouped-monitor mode cannot provide either two stable independent
+  instances or one correctly sized continuous viewport.
+- The web runtime resets or loses ecosystem state during ordinary display reconnect,
+  sleep/wake, profile changes, or context restoration.
+- Measured CPU, GPU, memory, or frame pacing exceeds the milestone 4 budget after
+  renderer and simulation profiling.
+
+Do not build and maintain both hosts speculatively. Keep the portable core and make
+the host decision from owning-runtime evidence after milestone 2 interaction tests.
+
 ## External browser reference
 
 `https://microbes.roilipman.com/` is useful as an interaction and motion reference,

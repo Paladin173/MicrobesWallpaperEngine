@@ -30,6 +30,26 @@ async function countLayerPixels(page, layer) {
   }, layer);
 }
 
+test('uses Wallpaper Engine native project property schema', async ({ request }) => {
+  const response = await request.get('/project.json');
+  expect(response.ok()).toBe(true);
+  const project = await response.json();
+  expect(project.file).toBe('index.html');
+  expect(project.type).toBe('web');
+  expect(Array.isArray(project.general.properties)).toBe(false);
+  expect(project.general.properties.renderquality).toMatchObject({
+    text: 'Render Quality',
+    type: 'combo',
+    value: 'auto'
+  });
+  expect(project.general.properties.renderquality.options).toHaveLength(4);
+  expect(project.general.properties.interaction).toMatchObject({
+    text: 'Interaction',
+    type: 'bool',
+    value: true
+  });
+});
+
 test('renders every fixture layer without WebGL errors', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));

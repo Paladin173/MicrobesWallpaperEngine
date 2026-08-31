@@ -13,7 +13,8 @@ quality scaling, normalized pointer input, resize, and WebGL context restoration
 The ecosystem simulation and final click-to-feed behavior are planned next. The
 current entities are fixed Android-reference fixtures used to validate rendering
 and performance. Final visual parity and target-PC performance remain live test
-gates.
+gates. The first live Wallpaper Engine measurements are recorded in
+[docs/MILESTONE_1_VALIDATION.md](docs/MILESTONE_1_VALIDATION.md).
 See [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) for the complete roadmap and gates.
 
 ## Installation
