@@ -83,7 +83,9 @@ Zoomed-out simulation, food placement, pointer attraction, and corpse lifecycle 
 share the full projected world bounds, including all four edges of a 5120x1440
 viewport. Wallpaper Engine settings are retained when delivered before app startup,
 with the global property listener registered in the document head and wrapped or raw
-property values normalized before use. The complete suite passes 16 tests.
+property values normalized before use. Maximum Microbes is configurable from 50 to
+600 (default 300); 600 active microbes averaged 1.04 ms per fixed simulation update
+against a 16.67 ms budget. The complete suite passes 17 tests.
 
 The current repository was also opened by Wallpaper Engine in an isolated
 `MicrobesValidation` pop-out using its documented `openWallpaper` command. Two

@@ -24,7 +24,7 @@ class JavaRandom {
 }
 
 class MicrobeWorld {
-  static MAX_COUNT = 300;
+  static MAX_COUNT = 600;
   static INITIAL_COUNT = 30;
   static FOOD_CAPACITY = 600;
   static CORPSE_CAPACITY = 80;
@@ -45,6 +45,7 @@ class MicrobeWorld {
     this.movementScale = 0.6;
     this.lifecycleScale = 1;
     this.minimumPopulation = MicrobeWorld.INITIAL_COUNT;
+    this.maximumPopulation = 300;
     this.minimumX = 0;
     this.maximumX = 1;
     this.minimumY = 0;
@@ -141,6 +142,10 @@ class MicrobeWorld {
 
   setPopulationDensity(mode) {
     this.minimumPopulation = mode === 'low' ? 20 : mode === 'high' ? 45 : 30;
+  }
+
+  setMaximumPopulation(value) {
+    this.maximumPopulation = Math.round(MicrobeWorld.clamp(Number(value) || 300, 50, 600));
   }
 
   setZoom(zoom) {
@@ -404,7 +409,7 @@ class MicrobeWorld {
   updateLifecycle() {
     for (const microbe of this.microbeSlots) {
       if (!microbe.active) continue;
-      if (microbe.breed >= 1.2) {
+      if (microbe.breed >= 1.2 && this.activeCount < this.maximumPopulation) {
         const child = this.findInactiveMicrobe();
         if (child) this.reproduce(microbe, child);
       }
@@ -415,7 +420,7 @@ class MicrobeWorld {
         this.deathCount++;
       }
     }
-    while (this.activeCount < this.minimumPopulation) {
+    while (this.activeCount < Math.min(this.minimumPopulation, this.maximumPopulation)) {
       const replacement = this.findInactiveMicrobe();
       if (!replacement) break;
       this.activateMicrobeSlot(replacement, this.randomX(), this.randomY());

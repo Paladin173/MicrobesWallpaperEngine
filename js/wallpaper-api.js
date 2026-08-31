@@ -8,6 +8,7 @@ window.wallpaperSettings = {
   lifecycleSpeed: 1,
   ambientFood: true,
   population: 'normal',
+  maxMicrobes: 300,
   decorations: true
 };
 
@@ -48,6 +49,7 @@ window.wallpaperPropertyListener = {
       ['lifecyclespeed', 'lifecycleSpeed'],
       ['ambientfood', 'ambientFood'],
       ['population', 'population'],
+      ['maxmicrobes', 'maxMicrobes'],
       ['decorations', 'decorations']
     ]) {
       if (properties[propertyName] === undefined) continue;

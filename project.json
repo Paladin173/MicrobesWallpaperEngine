@@ -63,6 +63,14 @@
           { "label": "High", "value": "high" }
         ]
       },
+      "maxmicrobes": {
+        "text": "Maximum Microbes",
+        "type": "slider",
+        "value": 300,
+        "min": 50,
+        "max": 600,
+        "step": 10
+      },
       "decorations": {
         "text": "Background Decorations",
         "type": "bool",

@@ -62,6 +62,13 @@ test('uses Wallpaper Engine native project property schema', async ({ request })
     max: 2
   });
   expect(project.general.properties.population.options).toHaveLength(3);
+    expect(project.general.properties.maxmicrobes).toMatchObject({
+        type: 'slider',
+        value: 300,
+        min: 50,
+        max: 600,
+        step: 25
+    });
 });
 
 test('renders every active ecosystem layer without WebGL errors', async ({ page }) => {
@@ -480,6 +487,7 @@ test('retains settings delivered before the wallpaper app is ready', async ({ pa
             lifecyclespeed: { value: 1.8 },
             ambientfood: { value: 0 },
             population: { value: 'high' },
+            maxmicrobes: { value: 600 },
             decorations: { value: false }
         });
         window.app = app;
@@ -493,6 +501,7 @@ test('retains settings delivered before the wallpaper app is ready', async ({ pa
             lifecycleScale: app.scene.lifecycleScale,
             ambientFoodEnabled: app.scene.ambientFoodEnabled,
             minimumPopulation: app.scene.minimumPopulation,
+            maximumPopulation: app.scene.maximumPopulation,
             decorationCount: app.scene.decorationCount
         };
     });
@@ -504,6 +513,7 @@ test('retains settings delivered before the wallpaper app is ready', async ({ pa
         lifecycleScale: 1.8,
         ambientFoodEnabled: false,
         minimumPopulation: 45,
+        maximumPopulation: 600,
         decorationCount: 0
     });
     expect(result.settings).toMatchObject({
@@ -514,6 +524,37 @@ test('retains settings delivered before the wallpaper app is ready', async ({ pa
         lifecycleSpeed: 1.8,
         ambientFood: false,
         population: 'high',
+        maxMicrobes: 600,
         decorations: false
     });
+});
+test('honors the configurable maximum microbe population', async ({ page }) => {
+    await openWallpaper(page, 800, 600);
+    const result = await page.evaluate(() => {
+        const world = window.app.scene;
+        window.app.setPaused(true);
+        world.setMaximumPopulation(50);
+        for (let index = 0; index < 49; index++) {
+            const microbe = world.microbeSlots[index];
+            if (!microbe.active) world.activateMicrobeSlot(microbe, 0.5, 0.5);
+            microbe.energy = 1;
+            microbe.breed = 0.7;
+        }
+        world.activeCount = 49;
+        world.microbeSlots[0].energy = 1;
+        world.microbeSlots[0].breed = 1.2;
+        world.updateLifecycle();
+        world.microbeSlots[0].breed = 1.2;
+        world.updateLifecycle();
+        const countAtCap = world.activeCount;
+        world.setMaximumPopulation(600);
+        return {
+            countAtCap,
+            capacity: world.microbeSlots.length,
+            maximumPopulation: world.maximumPopulation
+        };
+    });
+    expect(result.countAtCap).toBe(50);
+    expect(result.capacity).toBe(600);
+    expect(result.maximumPopulation).toBe(600);
 });

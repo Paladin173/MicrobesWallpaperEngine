@@ -85,6 +85,9 @@ class WallpaperApp {
     if (settings.population !== undefined) {
       this.scene.setPopulationDensity(settings.population);
     }
+    if (settings.maxMicrobes !== undefined) {
+      this.scene.setMaximumPopulation(settings.maxMicrobes);
+    }
     if (settings.decorations !== undefined) {
       this.scene.setDecorationsEnabled(settings.decorations);
     }
